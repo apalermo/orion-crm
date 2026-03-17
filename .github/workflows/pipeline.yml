@@ -55,3 +55,25 @@ jobs:
 
       - name: Exécution des tests Spring Boot
         run: ./gradlew test
+
+  # ---------------------------------------------------------
+  # JOB 3 : Analyse Qualité & Sécurité (SonarCloud)
+  # ---------------------------------------------------------
+  sonarcloud:
+    name: SonarCloud Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupération du code avec historique
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Obligatoire pour SonarQube afin d'analyser le "Nouveau Code"
+
+      - name: Analyse SonarCloud
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Jeton natif de GitHub pour commenter la PR
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }} # Ton jeton secret stocké dans le coffre-fort
+        with:
+          args: >
+            -Dsonar.organization=apalermo
+            -Dsonar.projectKey=apalermo_orion-crm
