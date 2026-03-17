@@ -66,14 +66,28 @@ jobs:
       - name: Récupération du code avec historique
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Obligatoire pour SonarQube afin d'analyser le "Nouveau Code"
+          fetch-depth: 0
 
-      - name: Analyse SonarCloud
-        uses: SonarSource/sonarqube-scan-action@v5
+      - name: Configuration de Java 17 (Prérequis pour la compilation)
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: "temurin"
+
+      - name: Compilation du Back-end (Génération des .class)
+        working-directory: ./back
+        run: |
+          chmod +x ./gradlew
+          ./gradlew classes
+
+      - name: Analyse SonarCloud (v6)
+        uses: SonarSource/sonarqube-scan-action@v6
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Jeton natif de GitHub pour commenter la PR
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }} # jeton secret stocké dans le coffre-fort
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
             -Dsonar.organization=apalermo
             -Dsonar.projectKey=apalermo_orion-crm
+            -Dsonar.java.binaries=back/build/classes
+            -Dsonar.exclusions=**/build/**,**/dist/**,**/node_modules/**,front/coverage/**
