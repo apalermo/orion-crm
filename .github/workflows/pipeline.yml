@@ -29,7 +29,7 @@ jobs:
         run: npm ci
 
       - name: Exécution des tests Angular
-        run: npm test
+        run: npm run test:ci
 
   # ---------------------------------------------------------
   # JOB 2 : Tests du Back-end (Spring Boot)
