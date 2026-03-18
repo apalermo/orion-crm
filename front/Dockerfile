@@ -3,16 +3,18 @@ WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 COPY . .
+
 RUN npm run build
 
-FROM nginx:alpine
+FROM nginxinc/nginx-unprivileged:alpine
 
 RUN rm -rf /usr/share/nginx/html/*
 
 COPY --from=builder /app/dist/microcrm/browser /usr/share/nginx/html
 
-EXPOSE 80
+EXPOSE 8080
+
 CMD ["nginx", "-g", "daemon off;"]
