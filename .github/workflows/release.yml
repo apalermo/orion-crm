@@ -1,0 +1,86 @@
+name: Orion Release Versionnée
+
+on:
+  push:
+    tags:
+      - "v*" # Le workflow se lance UNIQUEMENT si le tag commence par un 'v' (ex: v1.0.0)
+
+jobs:
+  build-and-release:
+    name: Build Artifacts & Create Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      # ---------------------------------------------------------
+      # 1. BUILD DES ARTEFACTS (FRONT & BACK)
+      # ---------------------------------------------------------
+      - name: Configuration de Node.js 20
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
+        with:
+          node-version: 20
+
+      - name: Build Front-end (Angular) & Zippage
+        working-directory: ./front
+        run: |
+          npm ci --ignore-scripts
+          npm run build
+          # On crée une archive ZIP du dossier dist en y injectant la version
+          zip -r ../orion-crm-front-${{ github.ref_name }}.zip dist/
+
+      - name: Configuration de Java 17
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654
+        with:
+          java-version: 17
+          distribution: "temurin"
+
+      - name: Build Back-end (Spring Boot) & Renommage
+        working-directory: ./back
+        run: |
+          chmod +x ./gradlew
+          ./gradlew bootJar --no-daemon
+          # On déplace et on renomme le JAR généré avec la version exacte
+          mv build/libs/*.jar ../orion-crm-back-${{ github.ref_name }}.jar
+
+      # ---------------------------------------------------------
+      # 2. CREATION DE LA RELEASE GITHUB
+      # ---------------------------------------------------------
+      - name: Création de la Release et Upload des Artéfacts
+        uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe
+        with:
+          generate_release_notes: true
+          name: Release ${{ github.ref_name }}
+          files: |
+            orion-crm-front-${{ github.ref_name }}.zip
+            orion-crm-back-${{ github.ref_name }}.jar
+
+      # ---------------------------------------------------------
+      # 3. LIVRAISON DOCKER HUB (VERSIONNÉE)
+      # ---------------------------------------------------------
+      - name: Connexion à Docker Hub
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build & Push Back-end Docker Image
+        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294
+        with:
+          context: ./back
+          file: ./back/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/orion-crm-back:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/orion-crm-back:${{ github.ref_name }}
+
+      - name: Build & Push Front-end Docker Image
+        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294
+        with:
+          context: ./front
+          file: ./front/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/orion-crm-front:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/orion-crm-front:${{ github.ref_name }}
