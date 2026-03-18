@@ -1,5 +1,41 @@
+# =========================
+# Sécurité & Secrets
+# =========================
+.env
+.env.*
+*.pem
+*.key
+certs/
+secrets/
+
+# =========================
+# Git
+# =========================
+.git
+.gitignore
+.github
+
+# =========================
+# IDEs & OS
+# =========================
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# =========================
+# Back-end (Spring Boot / Gradle)
+# =========================
 /back/.gradle
 /back/build
+/back/bin
+/back/out
+
+# =========================
+# Front-end (Angular / Node)
+# =========================
 /front/dist
 /front/node_modules
 /front/.angular
+npm-debug.log
