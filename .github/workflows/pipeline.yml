@@ -1,0 +1,93 @@
+name: Orion CI/CD Pipeline
+
+on:
+  push:
+    branches: ["main", "ops/setup-ci-cd"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  # ---------------------------------------------------------
+  # JOB 1 : Tests du Front-end (Angular)
+  # ---------------------------------------------------------
+  frontend-test:
+    name: Front-end Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./front
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Configuration de Node.js 20
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
+        with:
+          node-version: 20
+
+      - name: Installation propre des dépendances
+        run: npm ci --ignore-scripts
+
+      - name: Exécution des tests Angular
+        run: npm run test:ci
+
+  # ---------------------------------------------------------
+  # JOB 2 : Tests du Back-end (Spring Boot)
+  # ---------------------------------------------------------
+  backend-test:
+    name: Back-end Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./back
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Configuration de Java 17 (Temurin)
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654
+        with:
+          java-version: 17
+          distribution: "temurin"
+
+      - name: Ajout des droits d'exécution au wrapper Gradle
+        run: chmod +x ./gradlew
+
+      - name: Exécution des tests Spring Boot
+        run: ./gradlew test
+
+  # ---------------------------------------------------------
+  # JOB 3 : Analyse Qualité & Sécurité (SonarCloud)
+  # ---------------------------------------------------------
+  sonarcloud:
+    name: SonarCloud Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupération du code avec historique
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          fetch-depth: 0
+
+      - name: Configuration de Java 17 (Prérequis pour la compilation)
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654
+        with:
+          java-version: 17
+          distribution: "temurin"
+
+      - name: Compilation du Back-end (Génération des .class)
+        working-directory: ./back
+        run: |
+          chmod +x ./gradlew
+          ./gradlew classes
+
+      - name: Analyse SonarCloud (v6)
+        uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.organization=apalermo
+            -Dsonar.projectKey=apalermo_orion-crm
+            -Dsonar.java.binaries=back/build/classes
+            -Dsonar.exclusions=**/build/**,**/dist/**,**/node_modules/**,front/coverage/**
