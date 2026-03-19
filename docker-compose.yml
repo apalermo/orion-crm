@@ -1,20 +1,22 @@
-services: 
+services:
   backend:
     build:
-      context: ./back 
-      - "8080:8080" 
+      context: ./back
+    ports:
+      - "8080:8080"
     networks:
       - orion-network
     environment:
-      - SPRING_PROFILES_ACTIVE=dev   
+      - SPRING_PROFILES_ACTIVE=dev
   frontend:
     build:
-      context: ./front 
+      context: ./front
     ports:
       - "80:80"
     networks:
       - orion-network
-    depends_on:      - backend 
+    depends_on:
+      - backend
 
 networks:
   orion-network:
