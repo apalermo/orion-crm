@@ -1,0 +1,31 @@
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.3.1
+    container_name: orion-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false # On désactive la sécurité complexe pour le dev local
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m" # On limite la RAM
+    ports:
+      - "9200:9200"
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:9.3.1
+    container_name: orion-logstash
+    volumes:
+      - ./logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+    ports:
+      - "5000:5000/tcp"
+      - "5044:5044"
+    depends_on:
+      - elasticsearch
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:9.3.1
+    container_name: orion-kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
