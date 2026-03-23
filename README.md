@@ -1,155 +1,63 @@
-<p align="center">
-   <img src="./front/src/favicon.png" width="192px" />
-</p>
+# Orion MicroCRM
 
-# MicroCRM (P7 - Développeur Full-Stack - Java et Angular - Mettez en œuvre l'intégration et le déploiement continu d'une application Full-Stack)
+Orion is a simple Customer Relationship Management (CRM) application composed of an Angular frontend and a Spring Boot backend.
 
-MicroCRM est une application de démonstration basique ayant pour être objectif de servir de socle pour le module "P7 - Développeur Full-Stack".
+## 🚀 Prerequisites
 
-L'application MicroCRM est une implémentation simplifiée d'un ["CRM" (Customer Relationship Management)](https://fr.wikipedia.org/wiki/Gestion_de_la_relation_client). Les fonctionnalités sont limitées à la création, édition et la visualisations des individus liés à des organisations.
+- [Docker](https://docs.docker.com/get-docker/)
+- [Docker Compose](https://docs.docker.com/compose/install/)
 
-![Page d'accueil](./misc/screenshots/screenshot_1.png)
-![Édition de la fiche d'un individu](./misc/screenshots/screenshot_2.png)
+## 🏗️ Technical Choices & Architecture
 
-## Code source
+To ensure a robust, scalable, and maintainable application, the following technical choices were implemented:
 
-### Organisation
+- **CI/CD Pipeline:** GitHub Actions is used to separate the Continuous Integration (automated testing + SonarCloud quality gate) from the Delivery process (building Docker images & GitHub Releases).
+- **Containerization:** Multi-stage Docker builds are used to optimize image size and security (e.g., using `nginx-unprivileged` for the frontend and a lightweight JRE for the backend).
+- **Monitoring:** An ELK Stack (Elasticsearch, Logstash, Kibana) captures backend logs via TCP in native JSON format, ensuring high observability without multiline stack trace parsing issues.
+- **Quality & Security:** SonarCloud is integrated as a strict Quality Gate to prevent technical debt and vulnerabilities from reaching production.
 
-Ce [monorepo](https://en.wikipedia.org/wiki/Monorepo) contient les 2 composantes du projet "MicroCRM":
+## 🛠️ Installation & Running the Application
 
-- La partie serveur (ou "backend"), en Java SpringBoot 3;
-- La partie cliente (ou "frontend"), en Angular 17.
+The application is fully containerized. To start both the frontend and the backend, run the following command at the root of the project:
 
-### Démarrer avec les sources
-
-#### Serveur
-
-##### Dépendances
-
-- [OpenJDK >= 17](https://openjdk.org/)
-
-##### Procédure
-
-1. Se positionner dans le répertoire `back` avec une invite de commande:
-
-   ```shell
-   cd back
-   ```
-
-2. Construire le JAR:
-
-   ```shell
-   # Sur Linux
-   ./gradlew build
-
-   # Sur Windows
-   gradlew.bat build
-   ```
-
-3. Démarrer le service:
-
-   ```shell
-   java -jar build/libs/microcrm-0.0.1-SNAPSHOT.jar
-   ```
-
-Puis ouvrir l'URL http://localhost:8080 dans votre navigateur.
-
-#### Client
-
-##### Dépendances
-
-- [NPM >= 10.2.4](https://www.npmjs.com/)
-
-##### Procédure
-
-1. Se positionner dans le répertoire `front` avec une invite de commande:
-
-   ```shell
-   cd front
-   ```
-
-2. (La première fois seulement) Installer les dépendances NodeJS:
-
-   ```shell
-   npm install
-   ```
-
-3. Démarrer le service de développement:
-
-   ```shell
-   npx @angular/cli serve
-   ```
-
-Puis ouvrir l'URL http://localhost:4200 dans votre navigateur.
-
-### Exécution des tests
-
-#### Client
-
-**Dépendances**
-
-- Google Chrome ou Chromium
-
-Dans votre terminal:
-
-```shell
-cd front
-CHROME_BIN=</path/to/google/chrome> npm test
+```bash
+docker compose up -d
 ```
 
-#### Serveur
+- **Frontend:** Accessible at `http://localhost:4200` (Use an Incognito/Private window if your browser forces HTTPS).
+- **Backend API:** Accessible at `http://localhost:8080`.
 
-Dans votre terminal:
+To stop the application:
 
-```shell
-cd back
-./gradlew test
+```bash
+docker compose down
 ```
 
-### Images Docker
+## 📊 Monitoring (ELK Stack)
 
-#### Client
+This project includes an ELK stack to monitor backend logs in real-time.
 
-##### Construire l'image
+1. Start the monitoring stack:
 
-```shell
-docker build --target front -t orion-microcrm-front:latest .
+```bash
+docker compose -f docker-compose.elk.yml up -d
 ```
 
-##### Exécuter l'image
+2. Access **Kibana** at `http://localhost:5601`.
+3. The logs from the Spring Boot backend are automatically forwarded to Logstash via TCP port 5000 and indexed in Elasticsearch.
 
-```shell
-docker run -it --rm -p 80:80 -p 443:443 orion-microcrm-front:latest
+## 💾 Infrastructure Backup
+
+Since the backend currently uses an in-memory database (`HSQLDB`) for development, there is no persistent business data to back up. The backup strategy therefore focuses on the **Infrastructure as Code (IaC)**.
+
+An automated backup script is provided to secure the Docker configuration and Logstash pipelines.
+
+```bash
+# Make the script executable (first time only)
+chmod +x backup.sh
+
+# Run the backup
+./backup.sh
 ```
 
-L'application sera disponible sur https://localhost.
-
-#### Serveur
-
-##### Construire l'image
-
-```shell
-docker build --target back -t orion-microcrm-back:latest .
-```
-
-##### Exécuter l'image
-
-```shell
-docker run -it --rm -p 8080:8080 orion-microcrm-back:latest
-```
-
-L'API sera disponible sur http://localhost:8080.
-
-#### Tout en un
-
-```shell
-docker build --target standalone -t orion-microcrm-standalone:latest .
-```
-
-##### Exécuter l'image
-
-```shell
-docker run -it --rm -p 8080:8080 -p 80:80 -p 443:443 orion-microcrm-standalone:latest
-```
-
-L'application sera disponible sur https://localhost et l'API sur http://localhost:8080.
+The script creates a timestamped archive (`.tar.gz`) in the `backups/` directory and automatically retains only the 5 most recent backups.

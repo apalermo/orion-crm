@@ -12,7 +12,7 @@ services:
     build:
       context: ./front
     ports:
-      - "80:80"
+      - "4200:8080"
     networks:
       - orion-network
     depends_on:
