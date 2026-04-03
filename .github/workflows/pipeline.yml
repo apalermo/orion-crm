@@ -31,6 +31,13 @@ jobs:
       - name: Exécution des tests Angular
         run: npm run test:ci
 
+      - name: Sauvegarder le fichier de rapport de tests
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        with:
+          name: lcov
+          path: front/coverage/
+          retention-days: 1
+
   # ---------------------------------------------------------
   # JOB 2 : Tests du Back-end (Spring Boot)
   # ---------------------------------------------------------
@@ -54,7 +61,14 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Exécution des tests Spring Boot
-        run: ./gradlew test
+        run: ./gradlew test jacocoTestReport
+
+      - name: Sauvegarder le fichier de rapport de tests
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        with:
+          name: jacoco-report
+          path: back/build/reports/jacoco/test/jacocoTestReport.xml
+          retention-days: 1
 
   # ---------------------------------------------------------
   # JOB 3 : Analyse Qualité & Sécurité (SonarCloud)
@@ -62,6 +76,7 @@ jobs:
   sonarcloud:
     name: SonarCloud Scan
     runs-on: ubuntu-latest
+    needs: ["frontend-test", "backend-test"]
     steps:
       - name: Récupération du code avec historique
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -73,6 +88,18 @@ jobs:
         with:
           java-version: 17
           distribution: "temurin"
+
+      - name: Téléchargement rapport Front
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: lcov
+          path: front/coverage/
+
+      - name: Téléchargement rapport Back
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: jacoco-report
+          path: back/build/reports/jacoco/test/
 
       - name: Compilation du Back-end (Génération des .class)
         working-directory: ./back
@@ -90,6 +117,8 @@ jobs:
             -Dsonar.organization=apalermo
             -Dsonar.projectKey=apalermo_orion-crm
             -Dsonar.java.binaries=back/build/classes
+            -Dsonar.javascript.lcov.reportPaths=front/coverage/**/lcov.info
+            -Dsonar.coverage.jacoco.xmlReportPaths=back/build/reports/jacoco/test/jacocoTestReport.xml
             -Dsonar.exclusions=**/build/**,**/dist/**,**/node_modules/**,front/coverage/**
 
   # ---------------------------------------------------------
