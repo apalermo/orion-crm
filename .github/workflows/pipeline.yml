@@ -32,7 +32,7 @@ jobs:
         run: npm run test:ci
 
       - name: Sauvegarder le fichier de rapport de tests
-        uses: actions/upload-artifact@vbbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
           name: lcov
           path: front/coverage/
@@ -64,7 +64,7 @@ jobs:
         run: ./gradlew test jacocoTestReport
 
       - name: Sauvegarder le fichier de rapport de tests
-        uses: actions/upload-artifact@vbbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
           name: jacoco-report
           path: back/build/reports/jacoco/test/jacocoTestReport.xml
@@ -90,13 +90,13 @@ jobs:
           distribution: "temurin"
 
       - name: Téléchargement rapport Front
-        uses: actions/download-artifact@v3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           name: lcov
           path: front/coverage/
 
       - name: Téléchargement rapport Back
-        uses: actions/download-artifact@v3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           name: jacoco-report
           path: back/build/reports/jacoco/test/
