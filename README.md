@@ -18,7 +18,13 @@ To ensure a robust, scalable, and maintainable application, the following techni
 
 ## 🛠️ Installation & Running the Application
 
-The application is fully containerized. To start both the frontend and the backend, run the following command at the root of the project:
+The application is fully containerized. Since it shares a global external network with the monitoring stack, you must create this network first:
+
+```bash
+docker network create orion-global-network
+```
+
+To start both the frontend and the backend, run the following command at the root of the project:
 
 ```bash
 docker compose up -d

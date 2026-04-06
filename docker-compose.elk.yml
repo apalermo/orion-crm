@@ -5,11 +5,13 @@ services:
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false # On désactive la sécurité complexe pour le dev local
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m" # On limite la RAM
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g" # On limite la RAM
     ports:
       - "9200:9200"
     volumes:
       - elastic_data:/usr/share/elasticsearch/data
+    networks:
+      - orion-network
 
   logstash:
     image: docker.elastic.co/logstash/logstash:9.3.1
@@ -21,6 +23,8 @@ services:
       - "5044:5044"
     depends_on:
       - elasticsearch
+    networks:
+      - orion-network
 
   kibana:
     image: docker.elastic.co/kibana/kibana:9.3.1
@@ -31,5 +35,13 @@ services:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
     depends_on:
       - elasticsearch
+    networks:
+      - orion-network
+
 volumes:
   elastic_data:
+
+networks:
+  orion-network:
+    name: orion-global-network
+    external: true

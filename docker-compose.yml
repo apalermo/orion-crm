@@ -8,6 +8,7 @@ services:
       - orion-network
     environment:
       - SPRING_PROFILES_ACTIVE=dev
+      - LOGSTASH_HOST=orion-logstash
   frontend:
     build:
       context: ./front
@@ -17,7 +18,7 @@ services:
       - orion-network
     depends_on:
       - backend
-
 networks:
   orion-network:
-    driver: bridge
+    name: orion-global-network
+    external: true
